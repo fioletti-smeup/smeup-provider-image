@@ -1,0 +1,84 @@
+{
+    "builders": [
+        {
+            "type": "vmware-iso",
+            "vm_name": "{{user `vm_name`}}-vmware-{{user `version`}}",
+            "iso_url": "{{user `iso_file`}}",
+            "iso_checksum": "{{user `iso_checksum`}}",
+            "iso_checksum_type": "{{user `type`}}",
+            "headless": "{{user `headless`}}",
+            "boot_wait": "20s",
+            "guest_os_type": "otherlinux-64",
+            "disk_size": "{{user `disk_size`}}",
+            "http_directory": "{{user `http_directory`}}",
+            "boot_command": [
+                "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks.cfg<enter>"
+            ],
+            "vmx_data": {
+                "memsize": "{{user `memsize`}}",
+                "numvcpus": "{{user `numvcpus`}}"
+            },
+            "ssh_username": "{{user `ssh_username`}}",
+            "ssh_password": "{{user `ssh_password`}}",
+            "ssh_wait_timeout": "40m",
+            "shutdown_command": "echo '{{user `ssh_password`}}' |   sudo -S sh -c 'shutdown -P +1 && passwd -e {{user `ssh_username`}}'"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "file",
+            "source": "../../common/terraform",
+            "destination": "/home/{{user `ssh_username`}}"
+        },
+        {
+            "type": "file",
+            "source": "../common/scripts/update-provider",
+            "destination": "/home/{{user `ssh_username`}}/update-provider"
+        },
+        {
+            "type": "shell",
+            "execute_command": "echo '{{user `ssh_password`}}' | sudo -S sh -c '{{ .Vars }} {{ .Path }}'",
+            "scripts": [
+                "../common/scripts/setup.sh",
+                "../common/scripts/solarwinds-msp.sh",
+                "../common/scripts/teamviewer.sh"
+            ],
+            "environment_vars": [
+                "USERNAME={{user `ssh_username`}}"
+            ]
+        },
+        {
+            "type": "shell",
+            "execute_command": "echo '{{user `ssh_password`}}' | sudo -S sh -c '{{ .Vars }} {{ .Path }}'",
+            "inline": "reboot",
+            "expect_disconnect": true,
+            "pause_before": "20s"
+        },
+        {
+            "type": "shell",
+            "scripts": [
+                "../common/scripts/terraform-setup.sh"
+            ],
+            "environment_vars": [
+                "SMEUP_PROVIDER_VERSION={{user `smeup-provider-fe-version`}}"
+            ]
+        },
+        {
+            "type": "shell",
+            "execute_command": "echo '{{user `ssh_password`}}' | sudo -S sh -c '{{ .Vars }} {{ .Path }}'",
+            "scripts": [
+                "scripts/setup.sh",
+                "../common/scripts/cleanup.sh"
+            ]
+        }
+    ],
+    "post-processors": [
+        {
+            "inline": [
+                "rm -f {{user `vm_name`}}-vmware-{{user `version`}}.ova",
+                "/usr/lib/vmware-ovftool/ovftool --shaAlgorithm=SHA1 output-vmware-iso/{{user `vm_name`}}-vmware-{{user `version`}}.vmx {{user `vm_name`}}-vmware-{{user `version`}}.ova"
+            ],
+            "type": "shell-local"
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+output-*-iso/
+
+packer_cache/
+
+.terraform
+
+terraform.tfstate
+
+terraform.tfstate.backup
+
+terraform_*_linux_amd64.zip
+
+*.ova

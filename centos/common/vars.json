@@ -1,0 +1,16 @@
+{
+    "iso_file": "http://mirrors.ocf.berkeley.edu/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1804.iso",
+    "iso_checksum": "714acc0aefb32b7d51b515e25546835e55a90da9fb00417fbee2d03a62801efd",
+    "type": "sha256",
+    "headless": "false",
+    "ssh_username": "smeup",
+    "ssh_password": "smeup",
+    "vm_name": "smeup-smartkit",
+    "version": "1.0.5",
+    "smeup-provider-fe-version": "1.0.3",
+    "http_directory": "../common/http",
+    "disk_size": "100000",
+    "memsize": "2048",
+    "numvcpus": "2",
+    "hyperv-generation": "1"
+}

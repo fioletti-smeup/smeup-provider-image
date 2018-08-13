@@ -1,0 +1,93 @@
+{
+    "builders": [
+        {
+            "type": "virtualbox-iso",
+            "iso_url": "{{user `iso_file`}}",
+            "iso_checksum": "{{user `iso_checksum`}}",
+            "iso_checksum_type": "{{user `type`}}",
+            "headless": "{{user `headless`}}",
+            "vm_name": "{{user `vm_name`}}-vbox-{{user `version`}}",
+            "guest_os_type": "RedHat_64",
+            "disk_size": "{{user `disk_size`}}",
+            "vboxmanage": [
+                [
+                    "modifyvm",
+                    "{{.Name}}",
+                    "--memory",
+                    "{{user `memsize`}}"
+                ],
+                [
+                    "modifyvm",
+                    "{{.Name}}",
+                    "--cpus",
+                    "{{user `numvcpus`}}"
+                ],
+                [
+                    "modifyvm",
+                    "{{.Name}}",
+                    "--vram",
+                    "10"
+                ]
+            ],
+            "boot_wait": "20s",
+            "http_directory": "{{user `http_directory`}}",
+            "boot_command": [
+                "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks.cfg<enter>"
+            ],
+            "ssh_username": "{{user `ssh_username`}}",
+            "ssh_password": "{{user `ssh_password`}}",
+            "ssh_pty": "true",
+            "ssh_wait_timeout": "20m",
+            "shutdown_command": "echo '{{user `ssh_password`}}' |   sudo -S sh -c 'shutdown -P +1 && passwd -e {{user `ssh_username`}}'",
+            "format": "ova"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "file",
+            "source": "../../common/terraform",
+            "destination": "/home/{{user `ssh_username`}}"
+        },
+        {
+            "type": "file",
+            "source": "../common/scripts/update-provider",
+            "destination": "/home/{{user `ssh_username`}}/update-provider"
+        },
+        {
+            "type": "shell",
+            "execute_command": "echo '{{user `ssh_password`}}' | sudo -S sh -c '{{ .Vars }} {{ .Path }}'",
+            "scripts": [
+                "../common/scripts/setup.sh",
+                "../common/scripts/solarwinds-msp.sh",
+                "../common/scripts/teamviewer.sh"
+            ],
+            "environment_vars": [
+                "USERNAME={{user `ssh_username`}}"
+            ]
+        },
+        {
+            "type": "shell",
+            "execute_command": "echo '{{user `ssh_password`}}' | sudo -S sh -c '{{ .Vars }} {{ .Path }}'",
+            "inline": "reboot",
+            "expect_disconnect": true,
+            "pause_before": "20s"
+        },
+        {
+            "type": "shell",
+            "scripts": [
+                "../common/scripts/terraform-setup.sh"
+            ],
+            "environment_vars": [
+                "SMEUP_PROVIDER_VERSION={{user `smeup-provider-fe-version`}}"
+            ]
+        },
+        {
+            "type": "shell",
+            "execute_command": "echo '{{user `ssh_password`}}' | sudo -S sh -c '{{ .Vars }} {{ .Path }}'",
+            "scripts": [
+                "scripts/setup.sh",
+                "../common/scripts/cleanup.sh"
+            ]
+        }
+    ]
+}
